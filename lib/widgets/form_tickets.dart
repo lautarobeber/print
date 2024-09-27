@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 // import 'package:uuid/uuid.dart';
 import 'package:sunmi/hive/ticket.dart';
-import 'package:sunmi/hive/hive_data.dart';
+
 
 
 class TicketForm extends StatefulWidget {
@@ -37,17 +37,21 @@ class _TicketFormState extends State<TicketForm> {
       Random random = Random();
       int randomId = random.nextInt(100000);
       Ticket newTicket = Ticket(id: randomId, name: _ticketName, price: _ticketPrice);
-      await HiveData().saveTicket(newTicket);
+      //await HiveData().saveTicket(newTicket);
 
       // Limpiar los campos después de guardar
       _nameController.clear();
       _priceController.clear();
+
+
     
       // Mostrar un mensaje de éxito
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Ticket agregado con éxito')),
+
         
       );
+      
     }
   }
 

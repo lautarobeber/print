@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:sunmi/hive/hive_data.dart';
+import 'package:sunmi/providers/tickets_provider.dart';
+
 import 'drawer.dart';
 import '/hive/ticket.dart';
 
@@ -29,36 +30,35 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Ticket> cart = []; // Lista para almacenar los tickets en el carrito.
   double totalMoney = 0.0; // Variable para almacenar la suma total
 
+  var ticketsProvider = TicketsProvider();
+
   @override
   void initState() {
     super.initState();
     // Inicializar algunos tickets
-    /* tickets = [
-      Ticket(id: 1, name: 'Ticket 1', price: 10.0),
-      Ticket(id: 2, name: 'Ticket 2', price: 20.0),
-      Ticket(id: 3, name: 'Ticket 3', price: 30.0),
-    ]; */
-     _loadTickets(); // Cargar los tickets desde Hive
+
+    _loadTickets(); // Cargar los tickets desde Hive
   }
-  
 
-  
-
-  Future<void> _loadTickets() async {
-    List<Ticket> loadedTickets =
-        await HiveData().tickets; // Obtener los tickets de Hive
+  Future<List<Ticket>> _loadTickets() async {
+    var loadedTickets = ticketsProvider.getTickets();
+    print('Tickets cargados: ${loadedTickets.length}');
+    // Guardar los tickets cargados en el estado
     setState(() {
-      tickets = loadedTickets; // Asignar los tickets cargados
+      tickets =
+          loadedTickets; // Ahora tickets está disponible para toda la clase
     });
+
+    return loadedTickets; // Retornar los tickets para el FutureBuilder
   }
 
-  void _addMoney(double amount) {
-    setState(() {
-      moneyList.add(amount); // Agrega el monto a la lista
-      totalMoney = moneyList.reduce((a, b) => a + b); // Calcula la suma total
-    });
+  @override
+  void dispose() {
+    super.dispose();
+    ticketsProvider.dispose();
   }
 
+ 
   int getCartQuantity(Ticket ticket) {
     final cartTicket = cart.firstWhere(
       (t) => t.id == ticket.id,
@@ -104,26 +104,6 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _removeTicket(Ticket ticket) {
-    setState(() {
-      // Buscamos el índice del ticket en el carrito
-      final existingTicketIndex = cart.indexWhere((t) => t.id == ticket.id);
-
-      if (existingTicketIndex != -1) {
-        // Si el ticket existe
-        if (cart[existingTicketIndex].quantity > 1) {
-          // Disminuimos la cantidad si hay más de uno
-          cart[existingTicketIndex].quantity -= 1;
-        } else {
-          // Si solo queda uno, lo quitamos del carrito
-          cart.removeAt(existingTicketIndex);
-        }
-      }
-
-      _calculateTotal(); // Recalcular el total
-    });
-  }
-
   // Función para calcular el total.
   void _calculateTotal() {
     totalMoney =
@@ -137,21 +117,22 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('Menu'),
       ),
       drawer: const AppDrawer(),
-      body: ListView(
-        children: tickets.map((ticket) {
-          return Padding(
-            padding:
-                const EdgeInsets.all(8.0), // Margen alrededor de cada ticket
-            child: _buildContainerWithButton(
-              context,
-              Colors
-                  .blue, // Puedes cambiar el color dinámicamente si es necesario
-              ticket.price, // Usamos el precio del ticket
-              ticket, // Pasamos el ticket para usarlo en la lógica de eliminar
-            ),
-          );
-        }).toList(),
-      ),
+      body: FutureBuilder(
+          future: ticketsProvider.inicializarBox(),
+          builder: (context, snapShot) {
+            if (snapShot.connectionState == ConnectionState.done) {
+              return (ticketsProvider.box.length < 1)
+                  ? Container(
+                      alignment: Alignment.center, // Centra el texto
+                      child: const Text(
+                        'No hay tickets',
+                        style: TextStyle(fontSize: 18, color: Colors.black54),
+                      ),
+                    )
+                  : Text('hay tickets'); /* _getTickets(context); */
+            }
+            return Container();
+          }),
 
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: cart.isNotEmpty

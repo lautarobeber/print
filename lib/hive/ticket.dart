@@ -1,9 +1,17 @@
 import "package:hive_flutter/hive_flutter.dart";
-
+import "package:hive/hive.dart";
 part 'ticket.g.dart';
 
 @HiveType(typeId:0)
 class Ticket extends HiveObject {
+  @HiveField(0)
+  int id;
+  @HiveField(1)
+  String name;
+  @HiveField(2)
+  double price;
+  @HiveField(3)
+  int quantity;
 
 
   Ticket(
@@ -13,12 +21,4 @@ class Ticket extends HiveObject {
       this.quantity = 0});
 
 
-  @HiveField(0)
-  final int id;
-  @HiveField(1)
-  final String name;
-  @HiveField(2)
-  final double price;
-  @HiveField(3)
-  int quantity;
 }
