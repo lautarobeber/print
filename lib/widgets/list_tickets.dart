@@ -43,22 +43,31 @@ class _ListarState extends State<ListarScreen> {
             return Container();
           }),
       floatingActionButton: IconButton(
-          onPressed: () {
-            var tickets = Ticket(id: 9, name: 'lautaro', price: 10);
-
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => UpdateScreen(
-                        ticket: tickets, indiceTicket: null, guardar: true)));
-          },
+          onPressed: () async {
+          // Usa Navigator.push y espera el resultado
+          var result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => UpdateScreen(
+                ticket: Ticket(id: 0, name: '', price: 0.0),
+                indiceTicket: null,
+                guardar: true,
+              ),
+            ),
+          );
+          
+          // Verifica el resultado y actualiza la lista si es necesario
+          if (result == true) {
+            setState(() {});
+          }
+        },
           icon: Icon(Icons.add_circle)),
     );
   }
 
   ListView _getTickets(BuildContext context) {
     var tickets = ticketsProvider.getTickets();
-
+   
     return ListView.builder(
       itemCount: tickets.length,
       itemBuilder: (context, ticketsIndex) {
@@ -69,7 +78,7 @@ class _ListarState extends State<ListarScreen> {
           child: ListTile(
             title: GestureDetector(
               child: Text(
-                '${ticketIndividual.name}\nEntrenador: ${ticketIndividual.price}', // Cambia 'ticket' por 'ticketIndividual'
+                '${ticketIndividual.name}\nPrecio: ${ticketIndividual.price}', // Cambia 'ticket' por 'ticketIndividual'
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               onTap: () {
@@ -77,6 +86,7 @@ class _ListarState extends State<ListarScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => UpdateScreen(
+                      
                       ticket:
                           ticketIndividual, // Cambia 'ticket' por 'ticketIndividual'
                       indiceTicket: ticketIndividual.id,
@@ -90,7 +100,8 @@ class _ListarState extends State<ListarScreen> {
               icon: Icon(Icons.delete),
               onPressed: () {
                 _deleteTicket(ticketIndividual
-                    .id); // Cambia 'ticket' por 'ticketIndividual'
+                    .id);
+                     // Cambia 'ticket' por 'ticketIndividual'
                 setState(() {});
               },
             ),

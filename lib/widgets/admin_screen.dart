@@ -5,6 +5,7 @@ import 'package:sunmi/widgets/list_tickets.dart';
 
 //ADMIN SCREEN
 class AdminScreen extends StatelessWidget {
+  
   const AdminScreen({super.key});
 
   @override

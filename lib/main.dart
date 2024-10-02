@@ -2,21 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:sunmi/hive/ticket.dart';
 import 'package:sunmi/widgets/admin_screen.dart';
+
 import 'widgets/home_screen.dart';
 import 'widgets/list_tickets.dart';
-
+import 'package:sunmi/providers/tickets_provider.dart';
 
 //impresora
 /* import 'package:sunmi/sunmi_screen.dart';
 SunmiScreen(), */
 
+
 void main() async {
   // Asegúrate de que los widgets estén vinculados
+  
   WidgetsFlutterBinding.ensureInitialized();
 
   // Registra el adaptador de tu modelo Ticket
   Hive.registerAdapter(TicketAdapter());
-
+ 
   // Inicia tu aplicación
   runApp(const MyApp());
 }
@@ -32,18 +35,16 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-       initialRoute: '/',
+      initialRoute: '/',
+      
       routes: {
         // Ruta principal que será la pantalla Home
         '/': (context) => const HomeScreen(),
         // Ruta para la pantalla Admin
         '/admin': (context) => const AdminScreen(),
-        
-        ListarScreen.nameRoute: (context) =>  ListarScreen(),
+
+        ListarScreen.nameRoute: (context) => ListarScreen(),
       },
     );
   }
 }
-
-
-

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:sunmi/hive/ticket.dart';
 import 'package:sunmi/providers/tickets_provider.dart';
+import 'package:sunmi/widgets/home_screen.dart';
 import 'list_tickets.dart';
+import 'dart:math';
 
 class UpdateScreen extends StatefulWidget {
   static const nameRoute = 'update';
@@ -55,7 +57,7 @@ class _UpdateScreenState extends State<UpdateScreen> {
                       widget.indiceTicket != null ? widget.ticket.name : '',
                   onSaved: (newName) {
                     // Validamos que newName no sea null
-
+                    widget.ticket.id = _generarIdAleatorio();
                     widget.ticket.name = newName!;
                   },
                 ),
@@ -95,13 +97,18 @@ class _UpdateScreenState extends State<UpdateScreen> {
     );
   }
 
-  _addTicket(var ticket) {
-    ticketProvider.addTicket(ticket);
-    Navigator.pushNamed(context, ListarScreen.nameRoute);
+  int _generarIdAleatorio() {
+    return Random().nextInt(100000); // Generar un ID aleatorio
   }
 
-  _updateTicket(var id, var ticket) {
+  _addTicket(var ticket) {
+    ticketProvider.addTicket(ticket);
+
+    Navigator.pop(context, true);
+  }
+
+  _updateTicket(var id, var ticket) async {
     ticketProvider.updateTicket(widget.ticket.id, widget.ticket);
-    Navigator.pushNamed(context, ListarScreen.nameRoute);
+    Navigator.pop(context, true);
   }
 }

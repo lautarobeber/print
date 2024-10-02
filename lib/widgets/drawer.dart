@@ -6,7 +6,9 @@ import './admin_screen.dart';
 class AppDrawer extends StatelessWidget {
 
   
-  const AppDrawer({super.key});
+ final VoidCallback loadTickets; // Define el tipo de la función que recibirás.
+
+  const AppDrawer({Key? key, required this.loadTickets}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

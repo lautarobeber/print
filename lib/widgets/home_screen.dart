@@ -8,23 +8,10 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  HomeScreenState createState() => HomeScreenState();
 }
 
-/* class Ticket {
-  final int id;
-  final String name;
-  final double price;
-  int quantity;
-
-  Ticket(
-      {required this.id,
-      required this.name,
-      required this.price,
-      this.quantity = 0});
-} */
-
-class _HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends State<HomeScreen> {
   List<double> moneyList = []; // Lista para almacenar los montos
   List<Ticket> tickets = []; // Lista para almacenar los tickets
   List<Ticket> cart = []; // Lista para almacenar los tickets en el carrito.
@@ -32,24 +19,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
   var ticketsProvider = TicketsProvider();
 
+  Future<void> _initializeTicketsBox() async {
+    await ticketsProvider.inicializarBox();
+  }
+
   @override
   void initState() {
     super.initState();
-    // Inicializar algunos tickets
-
-    _loadTickets(); // Cargar los tickets desde Hive
+    _initializeTicketsBox();
+    loadTickets(); // Cargar tickets al iniciar.
   }
 
-  Future<List<Ticket>> _loadTickets() async {
-    var loadedTickets = ticketsProvider.getTickets();
-    print('Tickets cargados: ${loadedTickets.length}');
-    // Guardar los tickets cargados en el estado
-    setState(() {
-      tickets =
-          loadedTickets; // Ahora tickets está disponible para toda la clase
-    });
+  Future<void> loadTickets() async {
+    await ticketsProvider.inicializarBox(); // Asegúrate de inicializar primero
+    final List<Ticket> newTickets = await ticketsProvider.getTickets();
 
-    return loadedTickets; // Retornar los tickets para el FutureBuilder
+    // Verificar si los tickets han cambiado.
+    if (newTickets != tickets) {
+      setState(() {
+        tickets = newTickets; // Actualiza el estado si hay cambios.
+      });
+    }
   }
 
   @override
@@ -58,7 +48,6 @@ class _HomeScreenState extends State<HomeScreen> {
     ticketsProvider.dispose();
   }
 
- 
   int getCartQuantity(Ticket ticket) {
     final cartTicket = cart.firstWhere(
       (t) => t.id == ticket.id,
@@ -115,12 +104,24 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Menu'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              loadTickets(); // Llama a loadTickets para recargar los tickets
+            },
+          ),
+        ],
       ),
-      drawer: const AppDrawer(),
+      drawer: AppDrawer(loadTickets: loadTickets),
       body: FutureBuilder(
-          future: ticketsProvider.inicializarBox(),
+          future:  _initializeTicketsBox(),
           builder: (context, snapShot) {
-            if (snapShot.connectionState == ConnectionState.done) {
+            if (snapShot.connectionState == ConnectionState.waiting) {
+              return Center(
+                  child:
+                      CircularProgressIndicator()); // Muestra un indicador de carga
+            } else if (snapShot.connectionState == ConnectionState.done) {
               return (ticketsProvider.box.length < 1)
                   ? Container(
                       alignment: Alignment.center, // Centra el texto
@@ -129,7 +130,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: TextStyle(fontSize: 18, color: Colors.black54),
                       ),
                     )
-                  : Text('hay tickets'); /* _getTickets(context); */
+                  : _getTicketsHome(
+                      context); // Muestra los tickets si están disponibles
             }
             return Container();
           }),
@@ -163,94 +165,112 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildContainerWithButton(
-      BuildContext context, Color color, double amount, Ticket ticket) {
-    return Container(
-      decoration: BoxDecoration(
-        color: color, // El color del contenedor es dinámico
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Stack(
-        children: [
-          Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              // Fila superior: Nombre a la izquierda y botón de eliminar a la derecha
-              Row(
+  ListView _getTicketsHome(BuildContext context) {
+    var tickets = ticketsProvider.getTickets();
+
+    return ListView.builder(
+      itemCount: tickets.length,
+      itemBuilder: (context, ticketsIndex) {
+        var ticketIndividual =
+            tickets[ticketsIndex]; // Cambia 'id' por 'ticketsIndex'
+        return Container(
+          margin: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Colors.blue, // El color del contenedor es dinámico
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Stack(
+            children: [
+              Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: Text(
-                        ticket.name, // Mostramos el nombre del ticket
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
+                children: <Widget>[
+                  // Fila superior: Nombre a la izquierda y botón de eliminar a la derecha
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          child: Text(
+                            ticketIndividual
+                                .name, // Mostramos el nombre del ticket
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.remove, color: Colors.red, size: 46),
-                    padding: EdgeInsets.zero,
-                    onPressed: () {
-                      // Lógica para eliminar el ticket
-                      _decreaseTicketQuantity(ticket);
-                    },
-                  ),
-                ],
-              ),
-              // Fila inferior: Precio a la izquierda y botón "Agregar" a la derecha
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: Text(
-                      'Precio: \$${ticket.price.toStringAsFixed(2)}', // Precio del ticket
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
+                      IconButton(
+                        icon: const Icon(Icons.remove,
+                            color: Colors.red, size: 46),
+                        padding: EdgeInsets.zero,
+                        onPressed: () {
+                          // Lógica para eliminar el ticket
+                          _decreaseTicketQuantity(ticketIndividual);
+                        },
                       ),
-                    ),
+                    ],
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: Text(
-                      'Cantidad: ${getCartQuantity(ticket)}', // Precio del ticket
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
+                  // Fila inferior: Precio a la izquierda y botón "Agregar" a la derecha
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: Text(
+                          'Precio: \$${ticketIndividual.price.toStringAsFixed(2)}', // Precio del ticket
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      _addTicket(ticket); // Agrega el monto del ticket
-                    },
-                    child: const Text(
-                      'Agregar',
-                      style: TextStyle(
-                        color: Colors.black, // Cambia el color del texto aquí
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: Text(
+                          'Cantidad: ${getCartQuantity(ticketIndividual)}', // Precio del ticket
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                      ElevatedButton(
+                        onPressed: () {
+                          _addTicket(
+                              ticketIndividual); // Agrega el monto del ticket
+                        },
+                        child: const Text(
+                          'Agregar',
+                          style: TextStyle(
+                            color:
+                                Colors.black, // Cambia el color del texto aquí
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              const Color.fromARGB(255, 255, 255, 255),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
+  }
+
+  void _deleteTicket(int id) {
+    ticketsProvider.deleteTicket(id);
   }
 }
